@@ -7,14 +7,16 @@ object Solution:
       case ((currentSum, Some(previous)), newChar) if newChar == previous => (currentSum + newChar.asDigit, Some(newChar))
       case ((currentSum, _), newChar) => (currentSum , Some(newChar))
 
-    val resultPart1 = result._2 match
-      case Some(value) if input.head == value => result._1 + value.asDigit
-      case _ => result._1
+    val resultPart1 =
+      result._2 match
+        case Some(lastValue) if input.head == lastValue => result._1 + lastValue.asDigit
+        case _ => result._1
 
     val (start, end) = input.splitAt(input.length / 2)
-    val resultPart2 = start.zip(end).collect:
-      case (a, b) if a == b => a.asDigit * 2
-    .sum
+    val resultPart2 =
+      start.zip(end).collect:
+        case (a, b) if a == b => a.asDigit * 2
+      .sum
 
     val result1 = s"$resultPart1"
     val result2 = s"$resultPart2"
