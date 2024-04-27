@@ -51,7 +51,7 @@ case class Ranked(name: String, load: Int, initialSize: Int)
 case class Program(name: String, size: Int, children: List[String]):
   def load(using tower: Tower): Int =
     size + children.foldLeft(0):
-      (acc, child) => acc + tower.byName(child).load
+      (acc, child) => acc + tower.load(child)
 
 case class Tower(programs: Seq[Program]):
   private val hierarchy: Map[Program, Genealogy] =
@@ -59,6 +59,13 @@ case class Tower(programs: Seq[Program]):
     programs.map(p => p -> (firstPass.find(_._2.contains(p.name)).map(_._1), p.children)).toMap
 
   private def internalByName(n: String): Option[Program] = programs.find(_.name == n)
+
+  import scala.collection.mutable.Map
+  val loadCache: Map[String, Int] = Map()
+  def load(name: String): Int =
+    given Tower = this
+    loadCache.getOrElseUpdate(name, internalByName(name).map(_.load).get)
+
 
   def byName(name: String): Program = internalByName(name).get
   def next(name: String): List[String] = internalByName(name).map(_.children).get
