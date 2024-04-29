@@ -3,8 +3,10 @@ import scala.annotation.tailrec
 object Solution:
   def run(inputLines: Seq[String]): (String, String) =
 
-    val result1 = s"${countGroups(inputLines.head.clean)}"
-    val result2 = s"${countInGarbage(inputLines.head)}"
+    val (inputPart1, resultPart2) = removeErasedCharsInGarbageOnlyAndCount(inputLines.head)
+
+    val result1 = s"${countGroups(inputPart1)}"
+    val result2 = s"$resultPart2"
 
     (s"${result1}", s"${result2}")
 
@@ -40,6 +42,22 @@ def removeErasedCharsInGarbageOnly(input: String) : String =
           case (_, char) => erase(input.tail, inGarbage, current.append(char))
 
   erase(input, false, StringBuilder())
+
+
+def removeErasedCharsInGarbageOnlyAndCount(input: String) : (String, Int) =
+  @tailrec
+  def eraseAndCount(input: String, inGarbage: Boolean, current: StringBuilder, counter: Int): (String, Int) =
+    input.isEmpty match
+      case true => (current.toString(), counter)
+      case false =>
+        (inGarbage, input(0)) match
+          case (false, '<') => eraseAndCount(input.tail, true, current, counter)
+          case (false, char) => eraseAndCount(input.tail, false, current.append(char), counter)
+          case (true, '!') => eraseAndCount(input.drop(1).tail, true, current, counter)
+          case (true, '>') => eraseAndCount(input.tail, false, current, counter)
+          case (true, char) => eraseAndCount(input.tail, true, current, counter + 1)
+
+  eraseAndCount(input, false, StringBuilder(), 0)
 
 def throwGarbageAway(input: String) : String =
   input.replaceAll("<[^>]*>", "")
