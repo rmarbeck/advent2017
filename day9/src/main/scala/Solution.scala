@@ -13,20 +13,31 @@ object Solution:
 end Solution
 
 def removeErasedCharsAndCount(input: String) : (String, Int) =
-  @tailrec
-  def eraseAndCount(input: String, inGarbage: Boolean, outsideGarbage: StringBuilder, garbagedCount: Int): (String, Int) =
-    input.isEmpty match
-      case true => (outsideGarbage.toString, garbagedCount)
-      case false =>
-        (inGarbage, input(0)) match
-          case (false, '<') => eraseAndCount(input.tail, true, outsideGarbage, garbagedCount)
-          case (false, ',') => eraseAndCount(input.tail, false, outsideGarbage, garbagedCount)
-          case (false, char) => eraseAndCount(input.tail, false, outsideGarbage.append(char), garbagedCount)
-          case (true, '!') => eraseAndCount(input.drop(1).tail, true, outsideGarbage, garbagedCount)
-          case (true, '>') => eraseAndCount(input.tail, false, outsideGarbage, garbagedCount)
-          case (true, char) => eraseAndCount(input.tail, true, outsideGarbage, garbagedCount + 1)
+  case class State(input: String, inGarbage: Boolean, outsideGarbage: StringBuilder, garbagedCount: Int):
+    def skip1Char = this.copy(input = input.tail)
+    def skip2Chars = this.copy(input = input.drop(1).tail)
+    def openGarbage = this.copy(input = input.tail, inGarbage = true)
+    def closeGarbage = this.copy(input = input.tail, inGarbage = false)
+    def appendChar(char: Char) = this.copy(input = input.tail, outsideGarbage = outsideGarbage.append(char))
+    def count = this.copy(input = input.tail, garbagedCount = garbagedCount + 1)
 
-  eraseAndCount(input, false, StringBuilder(), 0)
+  object State:
+    def init(input: String) = State(input, false, StringBuilder(), 0)
+
+  @tailrec
+  def eraseAndCount(state: State): (String, Int) =
+    state.input.isEmpty match
+      case true => (state.outsideGarbage.toString, state.garbagedCount)
+      case false =>
+        (state.inGarbage, state.input(0)) match
+          case (false, '<') => eraseAndCount(state.openGarbage)
+          case (false, ',') => eraseAndCount(state.skip1Char)
+          case (false, char) => eraseAndCount(state.appendChar(char))
+          case (true, '!') => eraseAndCount(state.skip2Chars)
+          case (true, '>') => eraseAndCount(state.closeGarbage)
+          case (true, char) => eraseAndCount(state.count)
+
+  eraseAndCount(State.init(input))
 
 @tailrec
 def countGroups(input: String, level: Int = 1, counter: Int = 0): Int =
