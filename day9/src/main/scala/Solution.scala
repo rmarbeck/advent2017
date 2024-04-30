@@ -33,7 +33,14 @@ def removeErasedCharsAndCount(input: String) : (Int, Int) =
     lazy val closeGroup: State = next.copy(deepness = deepness - 1)
 
   object State:
-    def init(input: String): State = State(input, false, 0, 0, 1)
+    def initial(rawString: String): State =
+      State(
+        input = rawString,
+        inGarbage = false,
+        garbagedCount = 0,
+        groupsCount = 0,
+        deepness = 1
+      )
 
   @tailrec
   def eraseAndCount(state: State): (Int, Int) =
@@ -50,4 +57,4 @@ def removeErasedCharsAndCount(input: String) : (Int, Int) =
           case (true, _) => eraseAndCount(state.garbageInc)
           case _ => throw Exception("Not supported")
 
-  eraseAndCount(State.init(input))
+  eraseAndCount(State.initial(input))
