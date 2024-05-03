@@ -56,15 +56,13 @@ case class Exchange(positionA: Int, positionB: Int) extends Action:
   override def apply(str: String): String =
     val current = str.toCharArray
     val initA = current(positionA)
-    val initB = current(positionB)
-    current(positionA) = initB
+    current(positionA) = current(positionB)
     current(positionB) = initA
     current.mkString
 
 case class Partner(programA: Char, programB: Char) extends Action:
   override def apply(str: String): String =
-    val current = str.toCharArray
-    val positionA = current.zipWithIndex.find(_._1 == programA).map(_._2).get
-    val positionB = current.zipWithIndex.find(_._1 == programB).map(_._2).get
+    val positionA = str.indexOf(programA)
+    val positionB = str.indexOf(programB)
     Exchange(positionA, positionB).apply(str)
 
