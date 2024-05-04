@@ -18,10 +18,10 @@ object Solution:
 end Solution
 
 def atFirstPosition(nbOfSteps: Int, from: Int = 0, currentPosition: Int = 0, currentSize: Int = 1): LazyList[Int] =
-  val newPosition = (currentPosition + nbOfSteps) % currentSize + 1
+  val newPosition = (currentPosition + nbOfSteps) % (currentSize)
   newPosition match
-    case 1 => currentSize #:: atFirstPosition(nbOfSteps, from + 1, 1, currentSize + 1)
-    case value => atFirstPosition(nbOfSteps, from + 1, value, currentSize + 1)
+    case 0 => currentSize #:: atFirstPosition(nbOfSteps, from + 1, 1, currentSize + 1)
+    case value => atFirstPosition(nbOfSteps, from + 1, value + 1, currentSize + 1)
 
 
 def process(buffer: CircularBuffer, remainingSteps: Int, nbOfSteps: Int, current: Int = 1, currentPosition: Int = 0): CircularBuffer =
