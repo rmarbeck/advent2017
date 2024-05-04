@@ -29,17 +29,14 @@ def findValueAt(start: String, actions: Array[Action], at: Int): String =
       values((at - init) % wideness)
 
 def findFirstRepeated(start: String, actions: Array[Action]): (Int, Int, Array[String]) =
-  import scala.collection.mutable.Map
-  val cache: Map[String, Int] = Map()
-  def process(current: String, step: Int = 0): (Int, Int) =
-    cache.get(current) match
+  def process(current: String, step: Int = 0, previous: Map[String, Int]): (Int, Int, Map[String, Int]) =
+    previous.get(current) match
       case None =>
-        cache.addOne(current, step)
-        process(dance(current, actions), step + 1)
-      case Some(initial) => (initial, step - initial)
+        process(dance(current, actions), step + 1, previous + (current -> step))
+      case Some(initial) => (initial, step - initial, previous)
 
-  val (init, wideness) = process(start)
-  (init, wideness, cache.toList.sortBy(_._2).map(_._1).toArray)
+  val (init, wideness, values) = process(start, previous = Map())
+  (init, wideness, values.toList.sortBy(_._2).map(_._1).toArray)
 
 def dance(current: String, actions: Array[Action]): String =
   actions.foldLeft(current):
