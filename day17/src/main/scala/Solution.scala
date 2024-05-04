@@ -31,7 +31,7 @@ def process(buffer: CircularBuffer, remainingSteps: Int, nbOfSteps: Int, current
       val (newBuffer, newCurrentPosition) = buffer.insert(currentPosition, nbOfSteps)
       process(newBuffer, remainingSteps - 1, nbOfSteps, current + 1, newCurrentPosition)
 
-case class CircularBuffer(values: List[Int]):
+case class CircularBuffer(values: Vector[Int]):
   override def toString: String = values.mkString(",")
   def positionAfter(value: Int): Int =
     values.indexOf(value) match
@@ -40,7 +40,8 @@ case class CircularBuffer(values: List[Int]):
 
   def insert(fromPosition: Int, nbOfSteps: Int): (CircularBuffer, Int) =
     val positionToInsert = (fromPosition + nbOfSteps) % values.size + 1
-    (CircularBuffer(values.take(positionToInsert) ++: (values.size +: values.drop(positionToInsert))), positionToInsert)
+    val (start, end) = values.splitAt(positionToInsert)
+    (CircularBuffer(start ++: (values.size +: end)), positionToInsert)
 
 object CircularBuffer:
-  val init: CircularBuffer = CircularBuffer(List(0))
+  val init: CircularBuffer = CircularBuffer(Vector(0))
