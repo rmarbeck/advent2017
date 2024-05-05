@@ -8,7 +8,7 @@ object Solution:
 
     val resultPart1 = process(CircularBuffer.init, part1Limit, nbOfSteps).positionAfter(part1Limit)
 
-    val resultPart2 = atFirstPosition(nbOfSteps).span(_ < part2Limit)._1.toList.last
+    val resultPart2 = firstPositions(nbOfSteps, limit = Some(part2Limit)).last
 
     val result1 = s"$resultPart1"
     val result2 = s"$resultPart2"
@@ -17,12 +17,14 @@ object Solution:
 
 end Solution
 
-def atFirstPosition(nbOfSteps: Int, from: Int = 0, currentPosition: Int = 0, currentSize: Int = 1): LazyList[Int] =
-  val newPosition = (currentPosition + nbOfSteps) % (currentSize)
-  newPosition match
-    case 0 => currentSize #:: atFirstPosition(nbOfSteps, from + 1, 1, currentSize + 1)
-    case value => atFirstPosition(nbOfSteps, from + 1, value + 1, currentSize + 1)
-
+def firstPositions(nbOfSteps: Int, from: Int = 0, currentPosition: Int = 0, currentSize: Int = 1, limit: Option[Int]): LazyList[Int] =
+  limit match
+    case Some(max) if from > max => LazyList.empty
+    case _ =>
+      val newPosition = (currentPosition + nbOfSteps) % (currentSize)
+      newPosition match
+        case 0 => currentSize #:: firstPositions(nbOfSteps, from + 1, 1, currentSize + 1, limit)
+        case value => firstPositions(nbOfSteps, from + 1, value + 1, currentSize + 1, limit)
 
 def process(buffer: CircularBuffer, remainingSteps: Int, nbOfSteps: Int, current: Int = 1, currentPosition: Int = 0): CircularBuffer =
   remainingSteps match
