@@ -1,3 +1,5 @@
+import scala.collection.immutable.ListMap
+
 object Solution:
   def run(inputLines: Seq[String]): (String, String) =
 
@@ -27,6 +29,7 @@ type Acceleration = XYZ
 case class XYZ(x: Int, y: Int, z: Int)
 
 case class Particle(id: Int, position: Position, speed: Speed, accel: Acceleration):
+  override def toString: String = s"P[$id]"
   lazy val globalAcceleration: Int =
     math.abs(accel.x) + math.abs(accel.y) + math.abs(accel.z)
 
@@ -82,6 +85,11 @@ def findNonColliding(particles: List[Particle]): Int =
     case List(one, other) => (List(one, other), one willCollideAt other)
   val byRoots = roots.flatMap:
     case (particles, commonRoots) => commonRoots.map(_ -> particles)
-  .toList.groupMapReduce(_._1)(_._2.toSet)(_ ++ _)
+  .toList.groupMap(_._1)(_._2)
+  val sortedRoots = ListMap[Int, List[List[Particle]]](byRoots.toSeq.sortBy(_._1):_*)
+  val collidingParticles = sortedRoots.foldLeft(Set[Particle]()):
+    case (acc, (_, particlesList)) =>
+      acc ++ (particlesList.filterNot:
+        _.exists(currentColliding => acc contains currentColliding)).flatten
 
-  particles.size - byRoots.flatMap(_._2).size
+  particles.size - collidingParticles.size
