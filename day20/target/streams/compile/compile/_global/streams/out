@@ -1,0 +1,9 @@
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E008] Not Found Error: /home/rmarbeck/dev/advent2017/day20/src/main/scala/Solution.scala:15:41 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m15 |[0m    [33mval[0m [36mresultPart1[0m = particles.sortBy(_.globalAcceleration).head.id[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                       ^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                    value globalAcceleration is not a member of Particle[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E172] Type Error: /home/rmarbeck/dev/advent2017/day20/src/main/scala/Solution.scala:15:60 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m15 |[0m    [33mval[0m [36mresultPart1[0m = particles.sortBy(_.globalAcceleration).head.id[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                                            ^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mAmbiguous given instances: both [33mobject[0m [35mString[0m in [33mobject[0m [35mOrdering[0m and [33mobject[0m [35mBigInt[0m in [33mobject[0m [35mOrdering[0m match type Ordering[B] of parameter ord of [33mmethod[0m [35msortBy[0m in [33mtrait[0m [35mSeqOps[0m[0m
+[0m[[0m[31merror[0m] [0m[0mtwo errors found[0m
