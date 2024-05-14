@@ -8,7 +8,7 @@ object Solution:
     val particles =
       inputLines.zipWithIndex.map:
         case (line, row) =>
-          val List(List(px, py, pz), List(sx, sy, sz), List(ax, ay, az)) = xyzExtractor.findAllIn(line).toList.map(_.toInt).grouped(3).toList
+          val Seq(Seq(px, py, pz), Seq(sx, sy, sz), Seq(ax, ay, az)) = xyzExtractor.findAllIn(line).map(_.toInt).grouped(3).toSeq
           Particle(row, XYZ(px, py, pz), XYZ(sx, sy, sz), XYZ(ax, ay, az))
 
     val resultPart1 = particles.minBy(_.globalAcceleration).id
@@ -34,17 +34,17 @@ case class Particle(id: Int, position: Position, speed: Speed, accel: Accelerati
     math.abs(accel.x) + math.abs(accel.y) + math.abs(accel.z)
 
   def willCollideAt(other: Particle): List[Int] =
-    def willCollideAt(coordinatesExtractor: XYZ => Int): Option[List[Int]] =
+    def willCollideOnCoordinateAt(coordinatesExtractor: XYZ => Int): Option[List[Int]] =
       def extract(extractor: Particle => XYZ): Int =
         coordinatesExtractor.apply(extractor.apply(this)) - coordinatesExtractor.apply(extractor.apply(other))
 
-      // 1 / 2 a t² + (v + 1 / 2 a) t + p <=> a t² + (2 v + a) t + 2 p
+      // 1 / 2 a t² + (s + 1 / 2 a) t + p <=> a t² + (2 s + a) t + 2 p
       val equation = Equation(extract(_.accel), extract(_.speed) * 2 + extract(_.accel), extract(_.position) * 2)
       equation.isTheSame match
         case true => None
         case false => Some(equation.positiveIntSolutions)
 
-    val byCoordinates = List(willCollideAt(_.x), willCollideAt(_.y), willCollideAt(_.z)).flatten
+    val byCoordinates = List[XYZ => Int](_.x, _.y, _.z).map(willCollideOnCoordinateAt).flatten
     byCoordinates.tail.foldLeft(byCoordinates.head):
       case (acc, newList) => acc intersect newList
 
