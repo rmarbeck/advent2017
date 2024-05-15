@@ -12,9 +12,19 @@ object Solution:
 
     println(Image.default)
 
+    println("***************************")
     println(Image.default.enhance)
-
+    println("***************************")
     println(Image.default.enhance.enhance)
+    println("***************************")
+    println(Image.default.enhance.enhance.enhance)
+    println("***************************")
+    println(Image.default.enhance.enhance.enhance.enhance)
+    println("***************************")
+    println(Image.default.enhance.enhance.enhance.enhance.enhance)
+    println(Image.default.enhance.enhance.enhance.enhance.enhance.on)
+
+    println(Image.default)
 
 
     val result1 = s""
@@ -37,7 +47,7 @@ case class Rule(input: Pixels, output: Pixels):
       case true => toCompare.variants.exists(isEqualTo)
 
   def enhance(image: Image): Option[Image] = matches(image) match
-    case true => Some(Image(output))
+    case true => Some(Image(output.map(_.map(identity))))
     case false => None
 
 object RuleExtractor:
@@ -59,6 +69,11 @@ case class Rules(rules: Seq[Rule]):
   lazy val rulesFor3By3: Seq[Rule] = rules.filter(_.size == 3)
 
 case class Image(pixels: Pixels):
+  lazy val on: Int = pixels.flatten.count(_ == true)
+  def safeCopy: Image =
+    Image {
+      pixels.map(_.map(identity))
+    }
   override def toString: String =
     pixels.map:
       line => line.map:
@@ -67,9 +82,8 @@ case class Image(pixels: Pixels):
       .mkString
     .mkString("\n")
 
-
   lazy val size = pixels.length
-  lazy val variants: Iterator[Pixels] = nextVariant(pixels, 0).iterator
+  def variants: Iterator[Pixels] = nextVariant(pixels, 0).iterator
 
   private def extract(toSize: Int): List[Image] =
     val grouped =
@@ -85,19 +99,26 @@ case class Image(pixels: Pixels):
     sortedValues.values.flatMap(_.grouped(toSize).map(_.toArray)).map(Image.apply).toList
     //sortedValues.values.map(_.toArray).map(Image.apply).toList
 
-  def as2By2: List[Image] = extract(2)
+  private def extract2(toSize: Int): List[Image] =
+    val newSize = pixels.length / toSize
+    pixels.grouped(toSize).flatMap:
+      line => line.transpose.grouped(toSize).map(_.transpose).map(Image.apply)
+    .toList
 
-  def as3By3: List[Image] = extract(3)
+  def as2By2: List[Image] =
+    extract2(2)
+
+  def as3By3: List[Image] = extract2(3)
 
   def enhance(using Rules): Image =
     size match
-      case 2 => summon[Rules].rulesFor2By2.flatMap(_.enhance(this)).headOption.getOrElse(this)
-      case 3 => summon[Rules].rulesFor3By3.flatMap(_.enhance(this)).headOption.getOrElse(this)
+      case 2 =>
+        summon[Rules].rulesFor2By2.flatMap(_.enhance(this)).headOption.getOrElse(safeCopy)
+      case 3 =>
+        summon[Rules].rulesFor3By3.flatMap(_.enhance(this)).headOption.getOrElse(safeCopy)
       case _ =>
         (size % 2 == 0, size % 3 == 0) match
-          case (true, _) =>
-            val test = as2By2
-            Image.collate(as2By2.map(_.enhance))
+          case (true, _) => Image.collate(as2By2.map(_.enhance))
           case (_, true) => Image.collate(as3By3.map(_.enhance))
           case _ => this
 
@@ -115,8 +136,8 @@ object Image:
     val groupSize = Math.sqrt(subImagesCount).toInt
     val arrays = parts.grouped(groupSize).toArray.map(_.toArray)
     Image {
-      Array.tabulate(subImagesCount, subImagesCount):
-        case (row, col) => arrays(row / groupSize)(col / groupSize).pixels(row % groupSize)(col % groupSize)
+      Array.tabulate(subImagesCount + 2, subImagesCount + 2):
+        case (row, col) => arrays(row / (groupSize + 1))(col / (groupSize + 1)).pixels(row % (groupSize + 1))(col % (groupSize + 1))
     }
 
 def nextVariant(pixels: Pixels, rank: Int): LazyList[Pixels] =
