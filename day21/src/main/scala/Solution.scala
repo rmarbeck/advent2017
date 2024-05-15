@@ -1,4 +1,5 @@
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 object Solution:
   def run(inputLines: Seq[String]): (String, String) =
@@ -30,8 +31,8 @@ def doEnhance(image: Image, nTimes: Int)(using Rules): Image =
 type Pixels = Array[Array[Boolean]]
 
 case class Rule(input: Pixels, output: Pixels):
-  lazy val size = input.size
-  private lazy val inputFlattened = input.flatten 
+  lazy val size: Int = input.size
+  private lazy val inputFlattened = input.flatten
   private def isEqualTo(pixels: Pixels): Boolean =
     pixels.flatten.zip(inputFlattened).forall:
       case (one, other) => one == other
@@ -59,25 +60,22 @@ object RuleExtractor:
       case _ => None
 
 case class Rules(rules: Seq[Rule]):
-  lazy val rulesFor2By2: Seq[Rule] = rules.filter(_.size == 2)
-  lazy val rulesFor3By3: Seq[Rule] = rules.filter(_.size == 3)
+  private lazy val rulesFor2By2: Seq[Rule] = rules.filter(_.size == 2)
+  private lazy val rulesFor3By3: Seq[Rule] = rules.filter(_.size == 3)
 
   import scala.collection.mutable.{Map, HashMap}
-  val cached: Map[String, Image] = HashMap()
+  private val cached: mutable.Map[String, Image] = mutable.HashMap()
   def enhance(image: Image): Image =
     cached.getOrElseUpdate(image.forHashing, {
-      image.size match
-        case 2 => rulesFor2By2.flatMap(_.enhance(image)).headOption.getOrElse(image)
-        case 3 => rulesFor3By3.flatMap(_.enhance(image)).headOption.getOrElse(image)
+      (image.size match
+        case 2 => rulesFor2By2
+        case 3 => rulesFor3By3
         case _ => throw Exception("Not supported")
+        ).flatMap(_.enhance(image)).headOption.getOrElse(image)
     })
 
 case class Image(pixels: Pixels):
   lazy val on: Int = pixels.flatten.count(_ == true)
-  def safeCopy: Image =
-    Image {
-      pixels.map(_.map(identity))
-    }
 
   lazy val forHashing: String = pixels.flatten.map:
     case true => '1'
@@ -92,7 +90,7 @@ case class Image(pixels: Pixels):
       .mkString
     .mkString("\n")
 
-  lazy val size = pixels.length
+  lazy val size: Int = pixels.length
   def variants: Iterator[Pixels] = nextVariant(pixels, 0).iterator
 
   private def extract(toSize: Int): List[Image] =
@@ -101,9 +99,9 @@ case class Image(pixels: Pixels):
       line => line.transpose.grouped(toSize).map(_.transpose).map(Image.apply)
     .toList
 
-  def as2By2: List[Image] = extract(2)
+  private def as2By2: List[Image] = extract(2)
 
-  def as3By3: List[Image] = extract(3)
+  private def as3By3: List[Image] = extract(3)
 
   def enhance(using Rules): Image =
     size match
@@ -125,8 +123,8 @@ object Image:
       )
     }
 
-  def collate(parts: List[Image]): Image =
-    val subImagesSize = parts(0).size
+  private def collate(parts: List[Image]): Image =
+    val subImagesSize = parts.head.size
     val subImagesPerLine = Math.sqrt(parts.size).toInt
     val imagesGroupedByLines = parts.grouped(subImagesPerLine).toArray
     val finalSize = subImagesSize * subImagesPerLine
