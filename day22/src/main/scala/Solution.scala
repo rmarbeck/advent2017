@@ -1,16 +1,23 @@
+import Direction.Left
+
 object Solution:
   def run(inputLines: Seq[String]): (String, String) =
 
-    val grid = Grid.from(inputLines)
-    val middle = (inputLines.head.size / 2)
+    val middle = inputLines.head.length / 2
     val initialPosition = Position(middle, middle)
 
-    given Grid = grid
+    val resultPart1 = {
+      given Grid = Grid.from(inputLines)(using OnOffStatus())
+      iterate(initialPosition, Up, 10_000)
+    }
 
-    val resultPart1 = iterate(initialPosition, Up, 10000)
+    val resultPart2 = {
+      given Grid = Grid.from(inputLines)(using MultiStatus())
+      iterate(initialPosition, Up, 10_000_000)
+    }
 
     val result1 = s"$resultPart1"
-    val result2 = s""
+    val result2 = s"$resultPart2"
 
     (s"${result1}", s"${result2}")
 
@@ -18,19 +25,10 @@ end Solution
 
 enum Direction:
   case Up, Right, Down, Left
-  def turnRight: Direction =
-    this match
-      case Up => Right
-      case Right => Down
-      case Down => Left
-      case Left => Up
-
-  def turnLeft: Direction =
-    this match
-      case Up => Left
-      case Right => Up
-      case Down => Right
-      case Left => Down
+  private def next(steps: Int) = Direction.fromOrdinal((this.ordinal+steps) % Direction.values.length)
+  def opposite: Direction = next(2)
+  def turnRight: Direction = next(1)
+  def turnLeft: Direction = next(3)
 
 export Direction.*
 
@@ -42,33 +40,72 @@ def iterate(currentPosition: Position, direction: Direction, steps: Int, infecti
       iterate(next._1, next._2, steps - 1, infections + next._3)
 
 def doBurst(currentPosition: Position, direction: Direction)(using Grid): (Position, Direction, Int) =
-  val (nextDir, infected) = summon[Grid].getPosition(currentPosition.row, currentPosition.col) match
-    case true => (direction.turnRight, 0)
-    case false => (direction.turnLeft, 1)
-
-  summon[Grid].swapPosition(currentPosition.row, currentPosition.col)
+  val currentStatus = summon[Grid].getPositionOrInit(currentPosition.row, currentPosition.col)
+  val (nextDir, infected) = (currentStatus.nextDirection(direction), currentStatus.getsInfected)
+  summon[Grid].setPositionToNextStatus(currentPosition.row, currentPosition.col)
   val nextPosition = currentPosition.next(nextDir)
   (nextPosition, nextDir, infected)
 
-class Grid:
+trait Status:
+  def infectedVariant: Status
+  def next: Status
+  def nextDirection(fromDirection: Direction): Direction
+  def getsInfected: Int
+
+case class OnOffStatus(infected: Boolean = false) extends Status:
+  override def infectedVariant: Status = OnOffStatus(true)
+  override def getsInfected: Int =
+    infected match
+      case true => 0
+      case false => 1
+
+  override def next: Status = OnOffStatus(!infected)
+  override def nextDirection(fromDirection: Direction): Direction =
+    infected match
+      case true => fromDirection.turnRight
+      case false => fromDirection.turnLeft
+
+enum Part2Status:
+  case Clean, Weakened, Infected, Flagged
+  def next: Part2Status =
+    Part2Status.fromOrdinal((this.ordinal+1) % Part2Status.values.length)
+
+export Part2Status.*
+
+class MultiStatus(status: Part2Status = Clean) extends Status:
+  override def infectedVariant: Status = MultiStatus(Infected)
+  override def getsInfected: Int =
+    status match
+      case Weakened => 1
+      case _ => 0
+
+  override def next: Status = MultiStatus(status.next)
+  override def nextDirection(fromDirection: Direction): Direction =
+    status match
+      case Clean => fromDirection.turnLeft
+      case Weakened => fromDirection
+      case Infected => fromDirection.turnRight
+      case Flagged => fromDirection.opposite
+
+class Grid(using defaultStatus: Status):
   import scala.collection.mutable.Map
-  val positions: Map[Position, Boolean] = Map()
-  def setPosition(row: Int, col: Int, value: Boolean) =
+  private val positions: Map[Position, Status] = Map()
+  def setPosition(row: Int, col: Int, value: Status): Option[Status] =
     positions.put(Position(row, col), value)
-  def swapPosition(row: Int, col: Int) =
-    setPosition(row, col, ! getPosition(row, col))
-  def getPosition(row: Int, col: Int) =
+  def setPositionToNextStatus(row: Int, col: Int): Option[Status] =
+    setPosition(row, col, getPositionOrInit(row, col).next)
+  def getPositionOrInit(row: Int, col: Int): Status =
     positions.getOrElseUpdate(Position(row, col), {
-      false
+      defaultStatus
     })
 
 object Grid:
-  def from(inputLines: Seq[String]): Grid =
+  def from(inputLines: Seq[String])(using defaultStatus: Status): Grid =
     val newGrid = new Grid()
     inputLines.zipWithIndex.foreach:
       case (line, row) =>
         line.zipWithIndex.foreach:
-          case ('#', col) => newGrid.setPosition(row, col, true)
+          case ('#', col) => newGrid.setPosition(row, col, defaultStatus.infectedVariant)
           case _ => ()
     newGrid
 
