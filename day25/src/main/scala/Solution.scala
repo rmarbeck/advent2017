@@ -1,5 +1,4 @@
 import scala.annotation.tailrec
-import scala.collection.immutable.HashMap
 
 object Solution:
   def run(inputLines: Seq[String]): (String, String) =
